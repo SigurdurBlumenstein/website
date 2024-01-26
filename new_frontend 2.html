@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Stefnir Bloomberg</title>
+
+        <script src=https://cdn.jsdelivr.net/npm/chart.js></script>
+
+        <style>
+
+            :root {
+                --height-graph: 90%; /* Global variable */
+                --width-graph: 90%;
+            }
+
+
+            body, html {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                /* overflow: hidden; This prevents scrollbars if you want to ensure everything fits on the screen */
+            }
+
+            .container {
+                display: grid;
+                grid-template-rows: repeat(12, 1fr);
+                grid-template-columns: repeat(12, 1fr);
+                background-color: rgb(12, 11, 11);
+                height: 100vh;
+                width: 100vw;
+                margin: 0; /* Reset any default margins */
+                padding: 0; /* Reset any default padding */
+            }
+
+ 
+            #header {
+                align-items: center;
+                display: flex;
+                justify-content: center;
+                color: white;
+                grid-column: 1 / -1;
+                grid-row: 1/2;
+                /* align-self: flex-start; */
+            }
+
+
+            .header-logo {
+                max-height: 30%; /* or any other size */
+                max-width: 30%; /* ensure it doesn't overflow the width */
+                width: auto; /* maintain aspect ratio */
+                height: auto; /* maintain aspect ratio */
+            }
+
+
+            #header-framvirkir,
+            #header-vaxtaferlar {
+                margin: 0;
+                grid-column: span 4;
+                font-size: 20px;
+                text-align: center;
+                color: orange;
+                align-items: center;
+                display: flex;
+                justify-content: center;
+            }
+
+
+            #header-framvirkir {
+                grid-row: 1/2;
+                grid-column: 2/6;
+                align-self: flex-end;
+                display: flex;
+                justify-content: flex-start; /* Aligns content to the start */
+            }
+
+ 
+            #header-vaxtaferlar {
+                grid-row: 7/8;
+                grid-column: 8/9;
+                align-self: flex-end;
+                display: flex;
+                justify-content: flex-start; 
+                margin-left: -5px;
+            }
+
+
+            #graph-top-left,
+            #graph-top-right,
+            #graph-bottom-left,
+            #graph-bottom-right {
+                background-color: white;
+                height: var(--height-graph);
+                width: var(--width-graph);
+            }
+
+ 
+            #graph-top-left {
+                grid-column: 2/6;
+                grid-row: 2/7;
+                display: flex; /* Add flex display */
+                justify-content: center; /* Center content horizontally */
+                align-items: center; /* Center content vertically */
+                background-color: rgb(248, 243, 243);
+            }
+
+
+            canvas#myChart {
+                width: 100%; /* Make canvas fill the container */
+                height: 100%; /* Make canvas fill the container */
+                box-sizing: border-box; /* Include padding and border in the element's total width and height */
+            }
+            
+
+            canvas {
+                max-width: 100%;
+                max-height: 100%;
+            }
+
+            #graph-top-right {
+                grid-column: 8/12;
+                background-color: rgb(34, 32, 32);
+                grid-row: 2/7;
+            }
+
+            #graph-bottom-left {
+                grid-column: 2/6;
+                grid-row: 8/13;
+                background-color: rgb(34, 30, 30);
+            }
+
+            #graph-bottom-right {
+                grid-column: 8/12;
+                grid-row: 8/13;
+                background-color: rgb(34, 30, 30);
+            }
+
+            .fullscreen {
+                position: fixed; /* Fixed position to cover the entire viewport */
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                z-index: 999; /* Make sure it's on top of other elements */
+                background-color: black; /* Optional: Set a background color */
+                display: flex; /* Use flexbox for centering */
+                align-items: center; /* Center vertically */
+                justify-content: center; /* Center horizontally */
+            }
+
+            /* Dropdown Button */
+            .dropbtn {
+                cursor: pointer;
+                background-color:grey;
+                border-radius: 6px;
+                color: white;
+                padding: 8px 16px; /* Adjusted padding */
+                font-size: 14px; /* Adjusted font size */
+                border: none;
+                cursor: pointer;
+                display: inline-block;
+                line-height: 1.5;
+                text-align: center;
+                white-space: nowrap;
+                width: 120px; /* Set a fixed width for the button */
+            }
+
+
+            /* Dropdown Content */
+            .dropdown-content {
+                cursor: pointer;
+                display: none;
+                position: absolute;
+                background-color:#f9f9f9;
+                width: 120px; /* Match the width of the button */
+                max-height: 160px; /* Set max height to display 4 items */
+                overflow-y: auto; /* Add scrollbar if content overflows */
+                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+                z-index: 1;
+            }
+
+
+            /* Links inside the dropdown */
+            .dropdown-content a {
+                cursor: pointer;
+                color: black;
+                padding: 8px 12px; /* Adjusted padding */
+                font-size: 14px; /* Adjusted font size */
+                text-decoration:none;
+                display: block;
+                line-height: 1; /* Adjust line height to reduce the height of each item */
+                }
+
+        /* Show the dropdown menu */
+            .dropdown:hover .dropdown-content {
+            display: block;
+            }
+
+            /* Change background color of dropdown button when dropdown content is shown */
+            .dropdown:hover .dropbtn {
+            background-color:darkgray;
+            }
+
+            #dropdown-top-left {
+                grid-column: 2; /* Place it in the first column */
+                grid-row: 2 / 3; /* Place it to span from the second to third row, adjust as necessary */
+                margin-left: -120px;
+            }
+
+            /* Assuming the dropdown on the bottom right is associated with the graph-bottom-left */
+            #dropdown-bottom-right {
+                margin-left: -120px;
+                grid-column: 8/9;
+                grid-row: 8/9;
+            }
+
+            /* Selected item style */
+            .selected {
+            background-color:#ddd; /* Change as needed */
+            color: #333; /* Change text color as needed */
+            }
+            
+
+            /* Ensure the table doesn't exceed the width of its container */
+            #myTable {
+                width: 100%; /* Full width */
+                table-layout: fixed; /* Ensures that the table layout is fixed */
+                border-collapse: collapse;
+                /* overflow-y: auto; */
+            }
+
+            /* Adjust the font size for the header cells */
+            #myTable th {
+                font-size: 16px; /* or whatever size you prefer */
+                text-align: center;
+                padding: 8px;
+                border: 1px solid #ddd; /* Thin, light grey border */
+                background-color: #666; /* Header background color */
+                color: white; /* Header font color */
+                width: 25%;
+            }
+
+            /* Adjust the font size for the data cells */
+            #myTable td {
+                font-size: 14px; /* or whatever size you prefer */
+                text-align: center;
+                padding: 8px;
+                border: 1px solid #ddd; /* Thin, light grey border */
+                background-color: #f2f2f2; /* Body row background color */
+            }
+
+            /* Optional: Set overflow to auto on the container of the table if you want a scrollbar */
+            .table-container {
+                width: 100%; /* Full width */
+                overflow-x: auto; /* Scrollbar if table overflows */
+                max-width: 100%;
+                max-height: 100%;
+            }
+
+            /* Styles for the header */
+            .table-header {
+                background-color: #666;
+                color: white;
+            }
+
+            /* Styles for the body rows */
+            #myTable tbody tr {
+                background-color: #f2f2f2;   
+            }
+
+            .btn {
+            display: inline-block;
+            background-color: #007bff; /* Bootstrap primary color for example */
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            grid-column: 12/13;
+            grid-row: 1/2;
+            max-width: 10px;
+            max-height: 10px;
+            margin-left: 100px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3; /* Darker shade for hover effect */
+            text-decoration: none; /* Ensures that the text doesn't get underlined on hover */
+        }
+        </style>
+    </head>
+
+
+<body>
+    <div class="container">
+        <div id="header">
+            <img src="c:\\Users\\ROBERTASG\\Downloads\\Stefni - lógó - PNG@4x-8 1.png" alt="Stefnir Bloomberg Logo" class="header-logo">
+        </div>
+        <div id="graph-top-left">
+            <canvas id="myChart"></canvas>
+        </div>
+        <div id="graph-top-right">
+            <canvas id="inflationChart"></canvas>
+        </div>
+        <div id="graph-bottom-left">
+            <div class="table-container">
+            <table id="myTable">
+                <thead>
+                    <tr class="table-header">
+                    <th style="width: 25%;">Name</th>
+                    <th style="width: 25%;">RIK</th>
+                    <th style="width: 25%;">Bond</th>
+                    <th style="width: 25%;">Credit Spread</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Table rows will be populated here -->
+                </tbody>
+                </table>
+            </div>
+        </div>
+
+        
+        <div id="graph-bottom-right">
+            <canvas id="forward-rates"></canvas>
+            <!-- Adding a link styled as a button -->
+        </div>
+
+        <!-- <div class="btn">
+            <a href="\\center1.ad.local\dfs$\IS\RVK\Documents02\sigurdurbl\My Documents\Python\Rauntími\fm.html" style="height: 5px; width: 5px;background-color: rgb(78, 73, 73); color: rgb(82, 78, 78);">Liv</a> 
+        </div> -->
+
+        <h4 id="header-framvirkir">Vaxtaferlar</h4>
+
+        <h4 id="header-vaxtaferlar">Framvirkir Vextir</h4>
+        
+        <div id="dropdown-bottom-right" class="dropdown">
+            <button class="dropbtn">Veldu</button>
+            <div id="dropdown-content" class="dropdown-content">
+                <a onclick="updateforward('forward_rate')" style="font-weight: bold;">Óverðtryggðir</a>
+                <a onclick="updateforward('forward_rate_verdtryggt')" style="font-weight: bold;">Verðtryggðir</a>
+            </div>
+        </div>
+
+
+    <div id="dropdown-top-left" class="dropdown">
+        <button class="dropbtn">Veldu</button>
+            <div id="dropdown-content" class="dropdown-content">
+                        <a onclick="selectOption(event, 'RIKB')" style="background-color: grey; color: black;">RIKB</a>
+                        <a onclick="selectOption(event, 'RIKS')" style="background-color: grey; color: black;">RIKS</a>
+                        <a onclick="selectOption(event, 'ISB CB')" style="background-color: red; color: white;">ISB CB</a> 
+                        <a onclick="selectOption(event, 'ISB CBI')" style="background-color: red; color: white;">ISB CBI</a>
+                        <a onclick="selectOption(event, 'ARION CB')" style="background-color: blue; color: white;">ARION CB</a>
+                        <a onclick="selectOption(event, 'ARION CBI')" style="background-color: blue; color: white;">ARION CBI</a>
+                        <a onclick="selectOption(event, 'LBANK CB')" style="background-color: darkblue; color: white;">LBANK CB</a>
+                        <a onclick="selectOption(event, 'LBANK CBI')" style="background-color: darkblue; color: white;">LBANK CBI</a>
+                        <a onclick="selectOption(event, 'RVK')" style="background-color: green; color: black;">RVK</a>
+                        <a onclick="selectOption(event, 'RVKV')" style="background-color: green; color: black;">RVKV</a>
+                        <a onclick="selectOption(event, 'OR')" style="background-color: rgb(7, 184, 243); color: black;">OR</a>
+                        <a onclick="selectOption(event, 'LSS')" style="background-color: pink; color: white;">LSS</a>
+                        <a onclick="selectOption(event, 'REGINN')" style="background-color: rgb(135, 50, 50); color: white;">Reginn</a>
+                    </div>
+                </div>
+                
+            </div>
+        <script>
+
+            let selectedOptions = {};
+            let chart = null;
+            function selectOption(event, option) {
+                event.preventDefault();
+                fetchData().then(data => {
+                    if (data[option]) {
+                        updateChart(data, option);
+                    }
+                });
+            }
+
+            async function fetchData() {
+                const response = await fetch('http://10.16.214.38:5000/data');
+                const data = await response.json();
+                return data; // Ensure this matches the new format
+            }
+
+            async function updateChart(data, option) {
+                const ctx = document.getElementById('myChart').getContext('2d');
+                if (chart) {
+                    chart.destroy();
+                }
+
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data[option].x, // x-coordinates
+                        datasets: [{
+                            label: option,
+                            data: data[option].y, // y-coordinates
+                            fill: false,
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1
+                        }]
+                    },
+                options: {
+                    responsive: true, // Ensures the chart is responsive
+                    maintainAspectRatio: false, // Ensures the chart fills the container
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'lightgrey' // Sets the grid lines to white
+                            },
+                            ticks: {
+                                color: 'black', // Sets the ticks to white
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'lightgrey' // Sets the grid lines to white
+                            },
+                            ticks: {
+                                color: 'black' // Sets the ticks to white
+                            },
+                            title: {
+                                display: true,
+                                text: 'Duration',
+                                color: 'white', // Title color
+                                font: {
+                                    size: 12, // Smaller font size
+                                    weight: 'bold' // Bold font weight
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false // Hides the legend
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += `${context.parsed.y}%`;
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            }
+
+                // Periodically fetch and update table data
+                function startTableDataFetch() {
+                    setInterval(async () => {
+                        await populateTable();
+                    }, 10000); // Adjust the interval as needed
+                }
+            
+                // Periodically fetch and update inflation chart data
+                function startInflationDataFetch() {
+                    setInterval(async () => {
+                        await updateInflationChart();
+                    }, 10000); // Adjust the interval as needed
+                }
+            
+                // Periodically fetch and update forward rates data
+                function startForwardRatesFetch() {
+                    setInterval(async () => {
+                        await updateforward('forward_rate'); // Or 'forward_rate_verdtryggt' based on selection
+                    }, 10000); // Adjust the interval as needed
+                }
+ 
+
+            async function populateTable() {
+                const tableDataResponse = await fetch('http://10.16.214.38:5000/table_data');
+                const tableData = await tableDataResponse.json();
+                const table = document.getElementById('myTable').getElementsByTagName('tbody')[0];
+
+                // Clear existing rows
+                table.innerHTML = '';
+
+                // Populate the table with data
+                tableData.forEach(item => {
+                const row = table.insertRow();
+
+                // Create a cell for each key-value pair in the item object
+                Object.values(item).forEach(value => {
+                    const cell = row.insertCell();
+                    cell.innerHTML = value;
+                    // Optionally, you can add a class to cells if you want to apply specific styles
+                    cell.classList.add('cell-style');
+                });
+                });
+            }
+
+            // Call the populateTable function to fetch and display the table data
+            populateTable();
+
+            async function fetchInflationData() {
+                const response = await fetch('http://10.16.214.38:5000/verdbolgualag');
+                return await response.json();
+            }
+            async function fetchforward() {
+                const response = await fetch('http://10.16.214.38:5000/framvirkir-vextir');
+                return await response.json();
+            }
+            const chartColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF', '#7BC225'];
+
+            async function updateforward(rateType) {
+                const response = await fetch(`http://10.16.214.38:5000/${rateType}`);
+                const overdData = await response.json();
+
+                const datasets = [];
+                let colorIndex = 0;
+                for (const key in overdData) {
+                    const dataPoints = overdData[key].map(item => {
+                        return { x: item[0], y: item[1] };
+                    });
+
+                    const color = chartColors[colorIndex % chartColors.length]; // Cycle through the colors
+                    datasets.push({
+                        label: key,
+                        data: dataPoints,
+                        fill: false,
+                        borderColor: color, // Use predefined color
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    });
+                    colorIndex++; // Move to the next color
+                }
+                
+
+                const ctx = document.getElementById('forward-rates').getContext('2d');
+                if (window.forwardRatesChart) {
+                    window.forwardRatesChart.destroy();
+                }
+                window.forwardRatesChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        animation: false,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                position: 'bottom',
+                                title: {
+                                    display: true,
+                                    text: 'Duration',
+                                    color: "white"
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: false,
+                                    text: 'Forward Rate (%)',
+                                    color: "white"
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.y}%`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            updateforward('forward_rate');
+
+            function getRandomColor() {
+                const letters = '0123456789ABCDEF';
+                let color = '#';
+                for (let i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+            
+            async function updateInflationChart() {
+                const response = await fetch('http://10.16.214.38:5000/verdbolgualag');
+                const data = await response.json();
+
+                const datasetHnit2 = data.hnit2.map(item => {
+                    return { x: item[1], y: item[2], name: item[0] };
+                });
+
+                const ctx = document.getElementById('inflationChart').getContext('2d');
+                const inflationChart = new Chart(ctx, {
+                    type: 'scatter',  // Change to scatter for individual points
+                    data: {
+                        datasets: [
+                            {
+                                label: 'Verdbolgualag',
+                                data: data.hnit.map(item => ({ x: item[0], y: item[1] })),
+                                borderColor: 'rgb(75, 192, 192)',
+                                fill: false,
+                                showLine: true,  // Connects the points with a line
+                            },
+                            {
+                                label: 'Bref',
+                                data: datasetHnit2,
+                                borderColor: 'rgb(192, 75, 75)',
+                                backgroundColor: 'rgb(192, 75, 75)',
+                                fill: false,
+                                showLine: false,  // No line between points
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                            }
+                        ]
+                    },
+                options: {
+                    responsive: true, // Ensures the chart is responsive
+                    maintainAspectRatio: false, // Ensures the chart fills the container
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'grey' // Sets the grid lines to white
+                            },
+                            ticks: {
+                                color: 'white', // Sets the ticks to white
+                                callback: function(value) {
+                                    return value + '%'; // Formats as percentage
+                                }
+                            },
+                            title: {
+                                display: false,
+                                text: 'Percentage',
+                                color: 'white' // Title color
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'grey' // Sets the grid lines to white
+                            },
+                            ticks: {
+                                color: 'white' // Sets the ticks to white
+                            },
+                            title: {
+                                display: true,
+                                text: 'Duration',
+                                color: 'white', // Title color
+                                font: {
+                                    size: 12, // Smaller font size
+                                    weight: 'bold' // Bold font weight
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    var label = context.dataset.label || '';
+
+                                    if (label === 'Bref') {
+                                        // Access the custom name property from the context's raw data
+                                        return context.raw.name + ': (' + context.label + ', ' + context.formattedValue + '%)';
+                                    } else {
+                                        return label + ': ' + context.formattedValue + '%';
+                                    }
+                                }
+                            },
+                        legend: {
+                            display: true, // Hides the legend
+                            labels:{
+                                color:"white"
+                            }
+                        }
+                    }
+                }
+            }
+            });
+            }
+            // Call the function to plot the inflation data
+            updateInflationChart();
+
+            document.querySelectorAll('#dropdown-top-left .dropdown-content a').forEach(item => {
+                item.addEventListener('click', function(event) {
+                    selectOption(event, event.target.textContent.trim());
+                });
+            });
+
+            document.addEventListener('DOMContentLoaded', (event) => {
+                // This will run when the document is loaded
+                let isFullscreen = false; // State to track fullscreen status
+                startTableDataFetch();
+                startInflationDataFetch();
+                startForwardRatesFetch();
+                function toggleFullscreen(elem) {
+                    // Toggle the fullscreen class
+                    elem.classList.toggle('fullscreen');
+                    isFullscreen = !isFullscreen; // Update the state
+                }
+                
+
+                // Add click event listeners to each graph container
+                document.querySelectorAll('#graph-top-left, #graph-top-right, #graph-bottom-right').forEach((graph) => {
+                    graph.addEventListener('click', function() {
+                        toggleFullscreen(this); // Pass the clicked element to the function
+                    });
+                });
+            });
+        </script>
+    </body>
+</html> 
